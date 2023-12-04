@@ -5,24 +5,27 @@ import random
 import numpy as np
 import cv2
 from glob import glob
-from scipy.ndimage.interpolation import rotate
+from scipy.ndimage import rotate
 from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 
+
 def read_image(imagefile, grayscale=False):
-    if grayscale == True:
+    if grayscale:
         image = cv2.imread(imagefile)
-        #image = np.expand_dims(image, -1)
+        # image = np.expand_dims(image, -1)
     else:
         image = cv2.imread(imagefile)
     return image
 
+
 def save_image(image, mask, path, binary=True):
     image = np.array(image)
-    if binary == True:
+    if binary:
         mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
     cv2.imwrite(path[0], image)
     cv2.imwrite(path[1], mask)
+
 
 def concat_images(images, rows, cols):
     _, h, w, _ = images.shape
@@ -31,6 +34,7 @@ def concat_images(images, rows, cols):
     images = images.reshape((rows * h, cols * w, 3))
     return images
 
+
 def check_size(size):
     if type(size) == int:
         size = (size, size)
@@ -38,14 +42,17 @@ def check_size(size):
         raise TypeError('size is int or tuple')
     return size
 
+
 def subtract(image):
     image = image / 255
     return image
+
 
 def resize(image, size):
     size = check_size(size)
     image = cv2.resize(image, size)
     return image
+
 
 def center_crop(image, mask, crop_size, size):
     h, w, _ = image.shape
@@ -63,6 +70,7 @@ def center_crop(image, mask, crop_size, size):
 
     return image, mask
 
+
 def random_crop(image, mask, crop_size, size):
     crop_size = check_size(crop_size)
     h, w, _ = image.shape
@@ -79,6 +87,7 @@ def random_crop(image, mask, crop_size, size):
 
     return image, mask
 
+
 def horizontal_flip(image, mask, size):
     image = image[:, ::-1, :]
     mask = mask[:, ::-1, :]
@@ -87,6 +96,7 @@ def horizontal_flip(image, mask, size):
     mask = resize(mask, size)
 
     return image, mask
+
 
 def vertical_flip(image, mask, size):
     image = image[::-1, :, :]
@@ -97,12 +107,14 @@ def vertical_flip(image, mask, size):
 
     return image, mask
 
+
 def scale_augmentation(image, mask, scale_range, crop_size, size):
     scale_size = np.random.randint(*scale_range)
     image = cv2.resize(image, (scale_size, scale_size))
     mask = cv2.resize(mask, (scale_size, scale_size))
     image, mask = random_crop(image, mask, crop_size, size)
     return image, mask
+
 
 def random_rotation(image, mask, size, angle_range=(0, 90)):
     h1, w1, _ = image.shape
@@ -119,6 +131,7 @@ def random_rotation(image, mask, size, angle_range=(0, 90)):
     mask = resize(mask, size)
 
     return image, mask
+
 
 def cutout(image_origin, mask_origin, mask_size, mask_value='mean'):
     image = np.copy(image_origin)
@@ -147,6 +160,7 @@ def cutout(image_origin, mask_origin, mask_size, mask_value='mean'):
 
     return image, mask
 
+
 def brightness_augment(img, mask, factor=0.5):
     hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV) #convert to hsv
     hsv = np.array(hsv, dtype=np.float64)
@@ -159,6 +173,7 @@ def brightness_augment(img, mask, factor=0.5):
 
     return image, mask
 
+
 def rgb_to_grayscale(img, mask):
     img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     img = [img, img, img]
@@ -168,19 +183,21 @@ def rgb_to_grayscale(img, mask):
     mask = resize(mask, size)
     return image, mask
 
+
 def create_dir(name):
     try:
         os.mkdir(name)
     except:
         pass
 
+
 if __name__ == '__main__':
-    ### Image Augmentation
+    # Image Augmentation
     size = (256, 256)
     crop_size = (300, 300)
 
-    path = "../../../ml_dataset/"
-    dataset_name = "kvasir_segmentation_dataset"
+    path = "data/"
+    dataset_name = "beak_dataset"
     full_path = os.path.join(path, dataset_name)
 
     new_path = "new_data/"
@@ -205,9 +222,9 @@ if __name__ == '__main__':
     masks.sort()
 
     len_ids = len(images)
-    train_size = int((80/100)*len_ids)
-    valid_size = int((10/100)*len_ids)		## Here 10 is the percent of images used for validation
-    test_size = int((10/100)*len_ids)		## Here 10 is the percent of images used for testing
+    train_size = int((60/100)*len_ids)
+    valid_size = int((20/100)*len_ids)		# Here 20 is the percent of images used for validation
+    test_size = int((20/100)*len_ids)		# Here 20 is the percent of images used for testing
 
     train_images, test_images = train_test_split(images, test_size=test_size, random_state=42)
     train_masks, test_masks = train_test_split(masks, test_size=test_size, random_state=42)
@@ -220,10 +237,10 @@ if __name__ == '__main__':
     print("Validation Size: ", valid_size)
     print("Testing Size: ", test_size)
 
-    ## Validation images and masks
+    # Testing images and masks
     for idx, p in tqdm(enumerate(test_images), total=len(test_images)):
-        ## Path
-        name = p.split("/")[-1].split(".")[0]
+        # Path
+        name = p.split("\\")[-1].split(".")[0]
         image_path = test_images[idx]
         mask_path = test_masks[idx]
 
@@ -242,10 +259,10 @@ if __name__ == '__main__':
             tmp_path = [img_path, mask_path]
             save_image(image, mask, tmp_path)
 
-    ## Testing images and masks
+    # Validation images and masks
     for idx, p in tqdm(enumerate(valid_images), total=len(valid_images)):
-        ## Path
-        name = p.split("/")[-1].split(".")[0]
+        # Path
+        name = p.split("\\")[-1].split(".")[0]
         image_path = valid_images[idx]
         mask_path = valid_masks[idx]
 
@@ -264,10 +281,10 @@ if __name__ == '__main__':
             tmp_path = [img_path, mask_path]
             save_image(image, mask, tmp_path)
 
-    ## Training images and masks
+    # Training images and masks
     for idx, p in tqdm(enumerate(train_images), total=len(train_images)):
-        ## Path
-        name = p.split("/")[-1].split(".")[0]
+        # Path
+        name = p.split("\\")[-1].split(".")[0]
         image_path = train_images[idx]
         mask_path = train_masks[idx]
 
@@ -275,7 +292,7 @@ if __name__ == '__main__':
             image = read_image(image_path)
             mask = read_image(mask_path, grayscale=True)
 
-            ## Augment
+            # Augment
             image1, mask1 = center_crop(image, mask, crop_size, size)
             image2, mask2 = random_crop(image, mask, crop_size, size)
             image3, mask3 = horizontal_flip(image, mask, size)
@@ -283,29 +300,29 @@ if __name__ == '__main__':
             image5, mask5 = scale_augmentation(image, mask, (512, 768), crop_size, size)
             image6, mask6 = random_rotation(image, mask, size)
             image7, mask7 = cutout(image, mask, 256)
-            ## Extra Cropping
+            # Extra Cropping
             image8, mask8 = random_crop(image, mask, crop_size, size)
             image9, mask9 = random_crop(image, mask, crop_size, size)
-            ## Extra Scale Augmentation
+            # Extra Scale Augmentation
             image10, mask10 = scale_augmentation(image, mask, (540, 820), crop_size, size)
             image11, mask11 = scale_augmentation(image, mask, (720, 1024), crop_size, size)
-            ## Extra Rotation
+            # Extra Rotation
             image12, mask12 = random_rotation(image, mask, size)
             image13, mask13 = random_rotation(image, mask, size)
-            ## Brightness
+            # Brightness
             image14, mask14 = brightness_augment(image, mask, factor=0.3)
             image15, mask15 = brightness_augment(image, mask, factor=0.6)
             image16, mask16 = brightness_augment(image, mask, factor=0.9)
-            ## More Rotation
+            # More Rotation
             image17, mask17 = random_rotation(image, mask, size)
             image18, mask18 = random_rotation(image, mask, size)
-            ## More Random Crop
+            # More Random Crop
             image19, mask19 = random_crop(image, mask, crop_size, size)
             image20, mask20 = random_crop(image, mask, crop_size, size)
-            ## More Cutout
+            # More Cutout
             image21, mask21 = cutout(image, mask, 256)
             image22, mask22 = cutout(image, mask, 256)
-            ## Grayscale
+            # Grayscale
             image23, mask23 = rgb_to_grayscale(image, mask)
             image24, mask24 = rgb_to_grayscale(image1, mask1)
             image25, mask25 = rgb_to_grayscale(image2, mask2)
@@ -315,11 +332,11 @@ if __name__ == '__main__':
             image29, mask29 = rgb_to_grayscale(image15, mask15)
             image30, mask30 = rgb_to_grayscale(image16, mask16)
 
-            ## Original image and mask
+            # Original image and mask
             image = resize(image, size)
             mask = resize(mask, size)
 
-            ## All images and masks
+            # All images and masks
             all_images = [image, image1, image2, image3, image4, image5, image6, image7,
                 image8, image9, image10, image11, image12, image13, image14, image15, image16,
                 image17, image18, image19, image20, image21, image22,
@@ -331,7 +348,7 @@ if __name__ == '__main__':
                 mask23, mask24, mask25, mask26, mask27, mask28, mask29, mask30
                 ]
 
-            ## Save the images and masks
+            # Save the images and masks
             new_image_path = os.path.join(new_full_path, "train", "images/")
             new_mask_path = os.path.join(new_full_path, "train", "masks/")
 

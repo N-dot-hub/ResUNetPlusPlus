@@ -5,9 +5,11 @@ import os
 import numpy as np
 import cv2
 
-import tensorflow as tf
-from tensorflow.keras.layers import *
-from tensorflow.keras.models import Model
+import tensorflow
+from tensorflow.python.keras.layers import *
+from tensorflow.python.keras.models import Model
+from tensorflow.python.layers.normalization import BatchNormalization
+
 
 def squeeze_excite_block(inputs, ratio=8):
     init = inputs
@@ -23,20 +25,21 @@ def squeeze_excite_block(inputs, ratio=8):
     x = Multiply()([init, se])
     return x
 
+
 def stem_block(x, n_filter, strides):
     x_init = x
 
-    ## Conv 1
+    # Conv 1
     x = Conv2D(n_filter, (3, 3), padding="same", strides=strides)(x)
     x = BatchNormalization()(x)
     x = Activation("relu")(x)
     x = Conv2D(n_filter, (3, 3), padding="same")(x)
 
-    ## Shortcut
-    s  = Conv2D(n_filter, (1, 1), padding="same", strides=strides)(x_init)
+    # Shortcut
+    s = Conv2D(n_filter, (1, 1), padding="same", strides=strides)(x_init)
     s = BatchNormalization()(s)
 
-    ## Add
+    # Add
     x = Add()([x, s])
     x = squeeze_excite_block(x)
     return x
@@ -45,23 +48,25 @@ def stem_block(x, n_filter, strides):
 def resnet_block(x, n_filter, strides=1):
     x_init = x
 
-    ## Conv 1
+    # Conv 1
     x = BatchNormalization()(x)
     x = Activation("relu")(x)
     x = Conv2D(n_filter, (3, 3), padding="same", strides=strides)(x)
-    ## Conv 2
+
+    # Conv 2
     x = BatchNormalization()(x)
     x = Activation("relu")(x)
     x = Conv2D(n_filter, (3, 3), padding="same", strides=1)(x)
 
-    ## Shortcut
-    s  = Conv2D(n_filter, (1, 1), padding="same", strides=strides)(x_init)
+    # Shortcut
+    s = Conv2D(n_filter, (1, 1), padding="same", strides=strides)(x_init)
     s = BatchNormalization()(s)
 
-    ## Add
+    # Add
     x = Add()([x, s])
     x = squeeze_excite_block(x)
     return x
+
 
 def aspp_block(x, num_filters, rate_scale=1):
     x1 = Conv2D(num_filters, (3, 3), dilation_rate=(6 * rate_scale, 6 * rate_scale), padding="same")(x)
@@ -79,6 +84,7 @@ def aspp_block(x, num_filters, rate_scale=1):
     y = Add()([x1, x2, x3, x4])
     y = Conv2D(num_filters, (1, 1), padding="same")(y)
     return y
+
 
 def attetion_block(g, x):
     """
@@ -107,6 +113,7 @@ def attetion_block(g, x):
     gc_mul = Multiply()([gc_conv, x])
     return gc_mul
 
+
 class ResUnetPlusPlus:
     def __init__(self, input_size=256):
         self.input_size = input_size
@@ -118,15 +125,15 @@ class ResUnetPlusPlus:
         c0 = inputs
         c1 = stem_block(c0, n_filters[0], strides=1)
 
-        ## Encoder
+        # Encoder
         c2 = resnet_block(c1, n_filters[1], strides=2)
         c3 = resnet_block(c2, n_filters[2], strides=2)
         c4 = resnet_block(c3, n_filters[3], strides=2)
 
-        ## Bridge
+        # Bridge
         b1 = aspp_block(c4, n_filters[4])
 
-        ## Decoder
+        # Decoder
         d1 = attetion_block(c3, b1)
         d1 = UpSampling2D((2, 2))(d1)
         d1 = Concatenate()([d1, c3])
@@ -142,11 +149,11 @@ class ResUnetPlusPlus:
         d3 = Concatenate()([d3, c1])
         d3 = resnet_block(d3, n_filters[1])
 
-        ## output
+        # output
         outputs = aspp_block(d3, n_filters[0])
         outputs = Conv2D(1, (1, 1), padding="same")(outputs)
         outputs = Activation("sigmoid")(outputs)
 
-        ## Model
+        # Model
         model = Model(inputs, outputs)
         return model

@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+
 class Squeeze_Excitation(nn.Module):
     def __init__(self, channel, r=8):
         super().__init__()
@@ -19,6 +20,7 @@ class Squeeze_Excitation(nn.Module):
         x = self.net(x).view(b, c, 1, 1)
         x = inputs * x
         return x
+
 
 class Stem_Block(nn.Module):
     def __init__(self, in_c, out_c, stride):
@@ -43,6 +45,7 @@ class Stem_Block(nn.Module):
         s = self.c2(inputs)
         y = self.attn(x + s)
         return y
+
 
 class ResNet_Block(nn.Module):
     def __init__(self, in_c, out_c, stride):
@@ -70,6 +73,7 @@ class ResNet_Block(nn.Module):
         y = self.attn(x + s)
         return y
 
+
 class ASPP(nn.Module):
     def __init__(self, in_c, out_c, rate=[1, 6, 12, 18]):
         super().__init__()
@@ -96,7 +100,6 @@ class ASPP(nn.Module):
 
         self.c5 = nn.Conv2d(out_c, out_c, kernel_size=1, padding=0)
 
-
     def forward(self, inputs):
         x1 = self.c1(inputs)
         x2 = self.c2(inputs)
@@ -105,6 +108,7 @@ class ASPP(nn.Module):
         x = x1 + x2 + x3 + x4
         y = self.c5(x)
         return y
+
 
 class Attention_Block(nn.Module):
     def __init__(self, in_c):
@@ -138,6 +142,7 @@ class Attention_Block(nn.Module):
         y = gc_conv * x
         return y
 
+
 class Decoder_Block(nn.Module):
     def __init__(self, in_c, out_c):
         super().__init__()
@@ -152,6 +157,7 @@ class Decoder_Block(nn.Module):
         d = torch.cat([d, g], axis=1)
         d = self.r1(d)
         return d
+
 
 class build_resunetplusplus(nn.Module):
     def __init__(self):

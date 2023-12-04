@@ -4,7 +4,8 @@ Data Generator
 import os
 import numpy as np
 import cv2
-from tensorflow.keras.utils import Sequence
+from tensorflow.python.keras.utils.all_utils import Sequence
+
 
 def parse_image(img_path, image_size):
     image_rgb = cv2.imread(img_path, 1)
@@ -15,6 +16,7 @@ def parse_image(img_path, image_size):
         image_rgb = cv2.resize(image_rgb, (image_size, image_size))
     image_rgb = image_rgb/255.0
     return image_rgb
+
 
 def parse_mask(mask_path, image_size):
     mask = cv2.imread(mask_path, -1)
@@ -28,6 +30,7 @@ def parse_mask(mask_path, image_size):
 
     return mask
 
+
 class DataGen(Sequence):
     def __init__(self, image_size, images_path, masks_path, batch_size=8):
         self.image_size = image_size
@@ -37,17 +40,17 @@ class DataGen(Sequence):
         self.on_epoch_end()
 
     def __getitem__(self, index):
-        if(index+1)*self.batch_size > len(self.images_path):
+        if (index+1)*self.batch_size > len(self.images_path):
             self.batch_size = len(self.images_path) - index*self.batch_size
 
-        images_path = self.images_path[index*self.batch_size : (index+1)*self.batch_size]
-        masks_path = self.masks_path[index*self.batch_size : (index+1)*self.batch_size]
+        images_path = self.images_path[index*self.batch_size: (index+1)*self.batch_size]
+        masks_path = self.masks_path[index*self.batch_size: (index+1)*self.batch_size]
 
         images_batch = []
         masks_batch = []
 
         for i in range(len(images_path)):
-            ## Read image and mask
+            # Read image and mask
             image = parse_image(images_path[i], self.image_size)
             mask = parse_mask(masks_path[i], self.image_size)
 

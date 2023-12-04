@@ -2,9 +2,11 @@ import os
 import numpy as np
 import cv2
 import tensorflow as tf
-from tensorflow.keras import backend as K
+from tensorflow.python.keras import backend as K
 
 smooth = 1.
+
+
 def dice_coef(y_true, y_pred):
     y_true_f = tf.keras.layers.Flatten()(y_true)
     y_pred_f = tf.keras.layers.Flatten()(y_pred)

@@ -6,8 +6,10 @@ import numpy as np
 import cv2
 
 import tensorflow as tf
-from tensorflow.keras.layers import *
-from tensorflow.keras.models import Model
+from tensorflow.python.keras.layers import *
+from tensorflow.python.keras.models import Model
+from tensorflow.python.layers.normalization import BatchNormalization
+
 
 class Unet:
     def __init__(self, input_size=256):
@@ -24,7 +26,7 @@ class Unet:
             x = Activation("relu")(x)
             c = x
 
-            if pool == True:
+            if pool:
                 x = MaxPooling2D((2, 2), (2, 2))(x)
                 return c, x
             else:
@@ -34,17 +36,17 @@ class Unet:
         inputs = Input((self.input_size, self.input_size, 3))
 
         c0 = inputs
-        ## Encoder
+        # Encoder
         c1, p1 = conv_block(c0, n_filters[0])
         c2, p2 = conv_block(p1, n_filters[1])
         c3, p3 = conv_block(p2, n_filters[2])
         c4, p4 = conv_block(p3, n_filters[3])
 
-        ## Bridge
+        # Bridge
         b1 = conv_block(p4, n_filters[4], pool=False)
         b2 = conv_block(b1, n_filters[4], pool=False)
 
-        ## Decoder
+        # Decoder
         d1 = Conv2DTranspose(n_filters[3], (3, 3), padding="same", strides=(2, 2))(b2)
         d1 = Concatenate()([d1, c4])
         d1 = conv_block(d1, n_filters[3], pool=False)
@@ -61,11 +63,11 @@ class Unet:
         d4 = Concatenate()([d4, c1])
         d4 = conv_block(d4, n_filters[0], pool=False)
 
-        ## output
+        # output
         outputs = Conv2D(1, (1, 1), padding="same")(d4)
         outputs = BatchNormalization()(outputs)
         outputs = Activation("sigmoid")(outputs)
 
-        ## Model
+        # Model
         model = Model(inputs, outputs)
         return model
