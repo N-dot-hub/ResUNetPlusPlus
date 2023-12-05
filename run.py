@@ -4,16 +4,15 @@ import numpy as np
 import cv2
 from glob import glob
 import tensorflow as tf
-from tensorflow.python.keras.metrics import Precision, Recall, MeanIoU
+from tensorflow.python.keras.metrics import (Precision, Recall, MeanIoU)
 from tensorflow.python.keras.optimizers import nadam_v2, adam_v2
 from tensorflow.python.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, CSVLogger
-
-
 from data_generator import DataGen
 from unet import Unet
 from resunet import ResUnet
 from m_resunet import ResUnetPlusPlus
 from metrics import dice_coef, dice_loss
+
 
 if __name__ == "__main__":
     # Path
@@ -21,10 +20,11 @@ if __name__ == "__main__":
     model_path = "files/resunetplusplus.h5"
 
     # Create files folder
-    try:
-        os.mkdir("files")
-    except:
-        pass
+    def create_dir(name):
+        try:
+            os.mkdir("files")
+        except:
+            pass
 
     train_path = "new_data/beak_dataset/train/"
     valid_path = "new_data/beak_dataset/valid/"
@@ -74,12 +74,12 @@ if __name__ == "__main__":
     model.compile(loss=dice_loss, optimizer=optimizer, metrics=metrics)
 
     csv_logger = CSVLogger(f"{file_path}unet_{batch_size}.csv", append=False)
-    checkpoint = ModelCheckpoint(model_path, verbose=1, save_best_only=True)
+    checkpoint = ModelCheckpoint(model_path, verbose=1, save_best_only=True, save_weights_only=True)
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=5, min_lr=1e-6, verbose=1)
     early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=False)
     callbacks = [csv_logger, checkpoint, reduce_lr, early_stopping]
 
-    model.fit(train_gen,
+    model.fit(x=train_gen,
               validation_data=valid_gen,
               steps_per_epoch=train_steps,
               validation_steps=valid_steps,

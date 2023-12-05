@@ -222,9 +222,9 @@ if __name__ == '__main__':
     masks.sort()
 
     len_ids = len(images)
-    train_size = int((60/100)*len_ids)
-    valid_size = int((20/100)*len_ids)		# Here 20 is the percent of images used for validation
-    test_size = int((20/100)*len_ids)		# Here 20 is the percent of images used for testing
+    train_size = int((84/100)*len_ids)
+    valid_size = int((8/100)*len_ids)		# Here 20 is the percent of images used for validation
+    test_size = int((8/100)*len_ids)		# Here 20 is the percent of images used for testing
 
     train_images, test_images = train_test_split(images, test_size=test_size, random_state=42)
     train_masks, test_masks = train_test_split(masks, test_size=test_size, random_state=42)

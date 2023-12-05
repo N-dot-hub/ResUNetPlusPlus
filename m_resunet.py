@@ -5,10 +5,9 @@ import os
 import numpy as np
 import cv2
 
-import tensorflow
+import tensorflow as tf
 from tensorflow.python.keras.layers import *
 from tensorflow.python.keras.models import Model
-from tensorflow.python.layers.normalization import BatchNormalization
 
 
 def squeeze_excite_block(inputs, ratio=8):
@@ -31,13 +30,13 @@ def stem_block(x, n_filter, strides):
 
     # Conv 1
     x = Conv2D(n_filter, (3, 3), padding="same", strides=strides)(x)
-    x = BatchNormalization()(x)
+    x = tf.keras.layers.BatchNormalization()(x)
     x = Activation("relu")(x)
     x = Conv2D(n_filter, (3, 3), padding="same")(x)
 
     # Shortcut
     s = Conv2D(n_filter, (1, 1), padding="same", strides=strides)(x_init)
-    s = BatchNormalization()(s)
+    s = tf.keras.layers.BatchNormalization()(s)
 
     # Add
     x = Add()([x, s])
@@ -49,18 +48,18 @@ def resnet_block(x, n_filter, strides=1):
     x_init = x
 
     # Conv 1
-    x = BatchNormalization()(x)
+    x = tf.keras.layers.BatchNormalization()(x)
     x = Activation("relu")(x)
     x = Conv2D(n_filter, (3, 3), padding="same", strides=strides)(x)
 
     # Conv 2
-    x = BatchNormalization()(x)
+    x = tf.keras.layers.BatchNormalization()(x)
     x = Activation("relu")(x)
     x = Conv2D(n_filter, (3, 3), padding="same", strides=1)(x)
 
     # Shortcut
     s = Conv2D(n_filter, (1, 1), padding="same", strides=strides)(x_init)
-    s = BatchNormalization()(s)
+    s = tf.keras.layers.BatchNormalization()(s)
 
     # Add
     x = Add()([x, s])
@@ -70,16 +69,16 @@ def resnet_block(x, n_filter, strides=1):
 
 def aspp_block(x, num_filters, rate_scale=1):
     x1 = Conv2D(num_filters, (3, 3), dilation_rate=(6 * rate_scale, 6 * rate_scale), padding="same")(x)
-    x1 = BatchNormalization()(x1)
+    x1 = tf.keras.layers.BatchNormalization()(x1)
 
     x2 = Conv2D(num_filters, (3, 3), dilation_rate=(12 * rate_scale, 12 * rate_scale), padding="same")(x)
-    x2 = BatchNormalization()(x2)
+    x2 = tf.keras.layers.BatchNormalization()(x2)
 
     x3 = Conv2D(num_filters, (3, 3), dilation_rate=(18 * rate_scale, 18 * rate_scale), padding="same")(x)
-    x3 = BatchNormalization()(x3)
+    x3 = tf.keras.layers.BatchNormalization()(x3)
 
     x4 = Conv2D(num_filters, (3, 3), padding="same")(x)
-    x4 = BatchNormalization()(x4)
+    x4 = tf.keras.layers.BatchNormalization()(x4)
 
     y = Add()([x1, x2, x3, x4])
     y = Conv2D(num_filters, (1, 1), padding="same")(y)
@@ -94,19 +93,19 @@ def attetion_block(g, x):
 
     filters = x.shape[-1]
 
-    g_conv = BatchNormalization()(g)
+    g_conv = tf.keras.layers.BatchNormalization()(g)
     g_conv = Activation("relu")(g_conv)
     g_conv = Conv2D(filters, (3, 3), padding="same")(g_conv)
 
     g_pool = MaxPooling2D(pool_size=(2, 2), strides=(2, 2))(g_conv)
 
-    x_conv = BatchNormalization()(x)
+    x_conv = tf.keras.layers.BatchNormalization()(x)
     x_conv = Activation("relu")(x_conv)
     x_conv = Conv2D(filters, (3, 3), padding="same")(x_conv)
 
     gc_sum = Add()([g_pool, x_conv])
 
-    gc_conv = BatchNormalization()(gc_sum)
+    gc_conv = tf.keras.layers.BatchNormalization()(gc_sum)
     gc_conv = Activation("relu")(gc_conv)
     gc_conv = Conv2D(filters, (3, 3), padding="same")(gc_conv)
 

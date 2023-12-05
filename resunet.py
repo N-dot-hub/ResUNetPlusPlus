@@ -8,7 +8,6 @@ import cv2
 import tensorflow as tf
 from tensorflow.python.keras.layers import *
 from tensorflow.python.keras.models import Model
-from tensorflow.python.layers.normalization import BatchNormalization
 
 
 class ResUnet:
@@ -20,21 +19,21 @@ class ResUnet:
             x_init = x
 
             # Conv 1
-            x = BatchNormalization()(x)
+            x = tf.keras.layers.BatchNormalization()(x)
             x = Activation("relu")(x)
             x = Conv2D(n_filter, (1, 1), padding="same")(x)
             # Conv 2
-            x = BatchNormalization()(x)
+            x = tf.keras.layers.BatchNormalization()(x)
             x = Activation("relu")(x)
             x = Conv2D(n_filter, (3, 3), padding="same")(x)
             # Conv 3
-            x = BatchNormalization()(x)
+            x = tf.keras.layers.BatchNormalization()(x)
             x = Activation("relu")(x)
             x = Conv2D(n_filter, (1, 1), padding="same")(x)
 
             # Shortcut
             s = Conv2D(n_filter, (1, 1), padding="same")(x_init)
-            s = BatchNormalization()(s)
+            s = tf.keras.layers.BatchNormalization()(s)
 
             # Add
             x = Add()([x, s])
@@ -88,7 +87,7 @@ class ResUnet:
 
         # output
         outputs = Conv2D(1, (1, 1), padding="same")(d4)
-        outputs = BatchNormalization()(outputs)
+        outputs = tf.keras.layers.BatchNormalization()(outputs)
         outputs = Activation("sigmoid")(outputs)
 
         # Model

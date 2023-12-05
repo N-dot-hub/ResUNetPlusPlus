@@ -8,7 +8,6 @@ import cv2
 import tensorflow as tf
 from tensorflow.python.keras.layers import *
 from tensorflow.python.keras.models import Model
-from tensorflow.python.layers.normalization import BatchNormalization
 
 
 class Unet:
@@ -18,11 +17,11 @@ class Unet:
     def build_model(self):
         def conv_block(x, n_filter, pool=True):
             x = Conv2D(n_filter, (3, 3), padding="same")(x)
-            x = BatchNormalization()(x)
+            x = tf.keras.layers.BatchNormalization()(x)
             x = Activation("relu")(x)
 
             x = Conv2D(n_filter, (3, 3), padding="same")(x)
-            x = BatchNormalization()(x)
+            x = tf.keras.layers.BatchNormalization()(x)
             x = Activation("relu")(x)
             c = x
 
@@ -65,7 +64,7 @@ class Unet:
 
         # output
         outputs = Conv2D(1, (1, 1), padding="same")(d4)
-        outputs = BatchNormalization()(outputs)
+        outputs = tf.keras.layers.BatchNormalization()(outputs)
         outputs = Activation("sigmoid")(outputs)
 
         # Model

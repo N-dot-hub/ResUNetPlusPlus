@@ -11,6 +11,14 @@ from tensorflow.python.keras.utils.all_utils import CustomObjectScope
 from data_generator import *
 from metrics import dice_coef, dice_loss
 
+from tensorflow.python.keras.models import Model
+from m_resunet import ResUnetPlusPlus
+from tensorflow.python.keras.metrics import (Precision, Recall, MeanIoU)
+from tensorflow.python.keras.optimizers import nadam_v2, adam_v2
+
+# Parameters
+lr = 1e-4
+
 
 def mask_to_3d(mask):
     mask = np.squeeze(mask)
@@ -38,15 +46,22 @@ if __name__ == "__main__":
     except:
         pass
 
+
     # Model
-    with CustomObjectScope({'dice_loss': dice_loss, 'dice_coef': dice_coef}):
-        model = load_model(model_path)
+    with ((CustomObjectScope({'dice_loss': dice_loss, 'dice_coef': dice_coef}))):
+        arch = ResUnetPlusPlus(input_size=image_size)
+        model = arch.build_model()
+        optimizer = nadam_v2.Nadam(lr)
+        metrics = [Recall(), Precision(), dice_coef, MeanIoU(num_classes=2)]
+        model.compile(loss=dice_loss, optimizer=optimizer, metrics=metrics)
+        model.load_weights("files/resunetplusplus.h5")
+        #model = load_model(model_path)
 
     # Test
     print("Test Result: ")
     test_steps = len(test_image_paths)//batch_size
     test_gen = DataGen(image_size, test_image_paths, test_mask_paths, batch_size=batch_size)
-    model.evaluate_generator(test_gen, steps=test_steps, verbose=1)
+    model.evaluate(test_gen, steps=test_steps, verbose=1)
 
     # Generating the result
     for i, path in tqdm(enumerate(test_image_paths), total=len(test_image_paths)):
