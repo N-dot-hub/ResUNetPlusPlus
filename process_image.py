@@ -19,6 +19,10 @@ def read_image(imagefile, grayscale=False):
     return image
 
 
+def crop_image(imagefile, rows, cols):
+    crop_img = imagefile[rows[0]:rows[1], cols[0]:cols[1]]
+    return crop_img
+
 def save_image(image, mask, path, binary=True):
     image = np.array(image)
     if binary:
@@ -192,13 +196,52 @@ def create_dir(name):
 
 
 if __name__ == '__main__':
+    # Raw Image crop size
+    raw_crop_size = (1534, 1534)
+
+    # Location for Raw Image crop
+    crop_row = (157, 157 + raw_crop_size[0])
+    crop_col = (1713, 1713 + raw_crop_size[1])
+
+    path = "data/"
+    raw_dataset_name = "raw_beak_dataset"
+    raw_full_path = os.path.join(path, raw_dataset_name)
+
+    dataset_name = "beak_dataset"
+    full_path = os.path.join(path, dataset_name)
+
+    raw_images = glob(os.path.join(raw_full_path, "images/", "*"))
+    raw_masks = glob(os.path.join(raw_full_path, "masks/", "*"))
+
+    for idx, p in tqdm(enumerate(raw_images), total=len(raw_images)):
+        # Path
+        name = p.split("\\")[-1].split(".")[0]
+        image_path = raw_images[idx]
+        mask_path = raw_masks[idx]
+
+        if not os.path.exists(full_path):
+            os.mkdir(full_path)
+            os.mkdir(os.path.join(full_path, "images"))
+            os.mkdir(os.path.join(full_path, "masks"))
+
+        if os.path.exists(image_path) and os.path.exists(mask_path):
+            image = read_image(image_path)
+            mask = read_image(mask_path)
+
+            new_image_path = os.path.join(full_path, "images/")
+            new_mask_path = os.path.join(full_path, "masks/")
+
+            image = crop_image(image, crop_row, crop_col)
+            mask = crop_image(mask, crop_row, crop_col)
+
+            img_path = new_image_path + str(name) + ".jpg"
+            mask_path = new_mask_path + str(name) + ".jpg"
+            tmp_path = [img_path, mask_path]
+            save_image(image, mask, tmp_path)
+
     # Image Augmentation
     size = (256, 256)
     crop_size = (300, 300)
-
-    path = "data/"
-    dataset_name = "beak_dataset"
-    full_path = os.path.join(path, dataset_name)
 
     new_path = "new_data/"
     create_dir(new_path)
