@@ -1,5 +1,6 @@
 
 import os
+import time
 import numpy as np
 import cv2
 from glob import glob
@@ -28,6 +29,9 @@ def mask_to_3d(mask):
 
 
 if __name__ == "__main__":
+    # Start time
+    start = time.time()
+
     # model_path = "files/unet.h5"
     # model_path = "files/resunet.h5"
     model_path = "files/resunetplusplus.h5"
@@ -87,3 +91,8 @@ if __name__ == "__main__":
         cv2.imwrite(f"{save_path}/{i}.png", np.concatenate(all_images, axis=1))
 
     print("Test image generation complete")
+
+    # Total time
+    end = time.time()
+    total_time = end - start
+    print("\n"+ str(total_time))
