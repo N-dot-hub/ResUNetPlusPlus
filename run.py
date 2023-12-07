@@ -75,7 +75,7 @@ if __name__ == "__main__":
     arch = ResUnetPlusPlus(input_size=image_size)
     model = arch.build_model()
 
-    optimizer = nadam_v2.Nadam(lr)
+    optimizer = adam_v2.Aadam(lr)
     metrics = [Recall(), Precision(), dice_coef, MeanIoU(num_classes=2)]
     model.compile(loss=dice_loss, optimizer=optimizer, metrics=metrics)
 
