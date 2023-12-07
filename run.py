@@ -17,6 +17,8 @@ from metrics import dice_coef, dice_loss
 if __name__ == "__main__":
     # Path
     file_path = "files/"
+    # model_path = "files/unet.h5"
+    # model_path = "files/resunet.h5"
     model_path = "files/resunetplusplus.h5"
 
     # Create files folder

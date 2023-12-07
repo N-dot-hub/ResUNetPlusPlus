@@ -28,6 +28,8 @@ def mask_to_3d(mask):
 
 
 if __name__ == "__main__":
+    # model_path = "files/unet.h5"
+    # model_path = "files/resunet.h5"
     model_path = "files/resunetplusplus.h5"
     save_path = "result"
     test_path = "new_data/beak_dataset/test/"
@@ -49,13 +51,18 @@ if __name__ == "__main__":
 
     # Model
     with ((CustomObjectScope({'dice_loss': dice_loss, 'dice_coef': dice_coef}))):
+        # arch = Unet(input_size=image_size)
+        # arch = ResUnet(input_size=image_size)
         arch = ResUnetPlusPlus(input_size=image_size)
         model = arch.build_model()
         optimizer = nadam_v2.Nadam(lr)
         metrics = [Recall(), Precision(), dice_coef, MeanIoU(num_classes=2)]
         model.compile(loss=dice_loss, optimizer=optimizer, metrics=metrics)
+        # model.load_weights("files/resunetplusplus.h5")
+        # model.load_weights("files/resunetplusplus.h5")
         model.load_weights("files/resunetplusplus.h5")
-        #model = load_model(model_path)
+
+
 
     # Test
     print("Test Result: ")
