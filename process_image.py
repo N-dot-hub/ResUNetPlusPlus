@@ -1,7 +1,7 @@
 
 import os
 import random
-
+import time
 import numpy as np
 import cv2
 from glob import glob
@@ -196,6 +196,9 @@ def create_dir(name):
 
 
 if __name__ == '__main__':
+    # Start time
+    start = time.time()
+
     # Raw Image crop size
     raw_crop_size = (1534, 1534)
 
@@ -404,3 +407,8 @@ if __name__ == '__main__':
                 path = [img_path, msk_path]
 
                 save_image(img, msk, path)
+
+    # Total time
+    end = time.time()
+    total_time = end - start
+    print("\n"+ str(total_time))

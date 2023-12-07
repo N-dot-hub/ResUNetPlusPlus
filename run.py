@@ -1,5 +1,6 @@
 
 import os
+import time
 import numpy as np
 import cv2
 from glob import glob
@@ -15,6 +16,9 @@ from metrics import dice_coef, dice_loss
 
 
 if __name__ == "__main__":
+    # Start time
+    start = time.time()
+
     # Path
     file_path = "files/"
     # model_path = "files/unet.h5"
@@ -87,3 +91,8 @@ if __name__ == "__main__":
               validation_steps=valid_steps,
               epochs=epochs,
               callbacks=callbacks)
+
+    # Total time
+    end = time.time()
+    total_time = end - start
+    print("\n"+ str(total_time))
