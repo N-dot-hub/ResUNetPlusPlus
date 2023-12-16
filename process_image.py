@@ -4,7 +4,9 @@ import random
 import time
 import numpy as np
 import cv2
+import json
 from glob import glob
+from collections import defaultdict
 from scipy.ndimage import rotate
 from tqdm import tqdm
 from sklearn.model_selection import train_test_split
@@ -195,19 +197,57 @@ def create_dir(name):
         pass
 
 
+class COCOParser:
+    def __init__(self, anns_file, imgs_dir):
+        with open(anns_file, 'r') as f:
+            coco = json.load(f)
+
+        self.annIm_dict = defaultdict(list)
+        self.cat_dict = {}
+        self.annId_dict = {}
+        self.im_dict = {}
+        self.file_name_dict = {}
+        for ann in coco['annotations']:
+            self.annIm_dict[ann['image_id']].append(ann)
+            self.annId_dict[ann['id']] = ann
+        for img in coco['images']:
+            self.im_dict[img['id']] = img
+        for cat in coco['categories']:
+            self.cat_dict[cat['id']] = cat
+        for file_name in coco['images']:
+            self.file_name_dict[file_name['file_name']] = file_name['id']
+
+    def get_imgIds(self):
+        return list(self.im_dict.keys())
+
+    def get_annIds(self, im_ids):
+        im_ids = im_ids if isinstance(im_ids, list) else [im_ids]
+        return [ann['id'] for im_id in im_ids for ann in self.annIm_dict[im_id]]
+
+    def load_anns(self, ann_ids):
+        ann_ids = ann_ids if isinstance(ann_ids, list) else [ann_ids]
+        return [self.annId_dict[ann_id] for ann_id in ann_ids]
+
+    def load_cats(self, class_ids):
+        class_ids = class_ids if isinstance(class_ids, list) else [class_ids]
+        return [self.cat_dict[class_id] for class_id in class_ids]
+
+    def get_imgfile_name(self, file_name):
+        return self.file_name_dict[file_name]
+
+
 if __name__ == '__main__':
     # Start time
     start = time.time()
 
     # Raw Image crop size
-    raw_crop_size = (1534, 1534)
-
-    # Location for Raw Image crop
-    crop_row = (157, 157 + raw_crop_size[0])
-    crop_col = (1713, 1713 + raw_crop_size[1])
+    # raw_crop_size = (2048, 2048)
+    raw_crop_size = (768, 768)
 
     path = "data/"
     raw_dataset_name = "raw_beak_dataset"
+    ann_json = "data/raw_beak_dataset/crop_box.json"
+    path_json = "data/raw_beak_dataset/"
     raw_full_path = os.path.join(path, raw_dataset_name)
 
     dataset_name = "beak_dataset"
@@ -216,11 +256,28 @@ if __name__ == '__main__':
     raw_images = glob(os.path.join(raw_full_path, "images/", "*"))
     raw_masks = glob(os.path.join(raw_full_path, "masks/", "*"))
 
+    # Location for Raw Image crop
+    coco = COCOParser(ann_json, path)
+
     for idx, p in tqdm(enumerate(raw_images), total=len(raw_images)):
         # Path
         name = p.split("\\")[-1].split(".")[0]
         image_path = raw_images[idx]
         mask_path = raw_masks[idx]
+
+        # Crop
+        img_id = str(name) + ".jpg"
+        img_id = coco.get_imgfile_name(img_id)
+        ann_id = coco.get_annIds(img_id)
+        annotations = coco.load_anns(ann_id)
+        bbox = annotations[0]['bbox']
+        dim_row = int(round(bbox[1],0))
+        dim_col = int(round(bbox[0],0))
+
+        # crop_row = (150, 150 + raw_crop_size[0])
+        crop_row = (dim_row, dim_row + raw_crop_size[0])
+        # crop_col = (1650, 1650 + raw_crop_size[1])
+        crop_col = (dim_col, dim_col + raw_crop_size[1])
 
         if not os.path.exists(full_path):
             os.mkdir(full_path)
@@ -243,8 +300,9 @@ if __name__ == '__main__':
             save_image(image, mask, tmp_path)
 
     # Image Augmentation
-    size = (256, 256)
-    crop_size = (300, 300)
+    scale = 3
+    size = (256 * scale, 256 * scale)
+    crop_size = (300 * scale, 300 * scale)
 
     new_path = "new_data/"
     create_dir(new_path)
@@ -343,15 +401,15 @@ if __name__ == '__main__':
             image2, mask2 = random_crop(image, mask, crop_size, size)
             image3, mask3 = horizontal_flip(image, mask, size)
             image4, mask4 = vertical_flip(image, mask, size)
-            image5, mask5 = scale_augmentation(image, mask, (512, 768), crop_size, size)
+            image5, mask5 = scale_augmentation(image, mask, (512 * scale, 768 * scale), crop_size, size)
             image6, mask6 = random_rotation(image, mask, size)
             image7, mask7 = cutout(image, mask, 256)
             # Extra Cropping
             image8, mask8 = random_crop(image, mask, crop_size, size)
             image9, mask9 = random_crop(image, mask, crop_size, size)
             # Extra Scale Augmentation
-            image10, mask10 = scale_augmentation(image, mask, (540, 820), crop_size, size)
-            image11, mask11 = scale_augmentation(image, mask, (720, 1024), crop_size, size)
+            image10, mask10 = scale_augmentation(image, mask, (540 * scale, 820 * scale), crop_size, size)
+            image11, mask11 = scale_augmentation(image, mask, (720 * scale, 1024 * scale), crop_size, size)
             # Extra Rotation
             image12, mask12 = random_rotation(image, mask, size)
             image13, mask13 = random_rotation(image, mask, size)
@@ -366,8 +424,8 @@ if __name__ == '__main__':
             image19, mask19 = random_crop(image, mask, crop_size, size)
             image20, mask20 = random_crop(image, mask, crop_size, size)
             # More Cutout
-            image21, mask21 = cutout(image, mask, 256)
-            image22, mask22 = cutout(image, mask, 256)
+            image21, mask21 = cutout(image, mask, 256 * scale)
+            image22, mask22 = cutout(image, mask, 256 * scale)
             # Grayscale
             image23, mask23 = rgb_to_grayscale(image, mask)
             image24, mask24 = rgb_to_grayscale(image1, mask1)

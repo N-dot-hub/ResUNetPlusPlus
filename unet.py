@@ -43,10 +43,10 @@ class Unet:
 
         # Bridge
         b1 = conv_block(p4, n_filters[4], pool=False)
-        b2 = conv_block(b1, n_filters[4], pool=False)
+        # b2 = conv_block(b1, n_filters[4], pool=False)
 
         # Decoder
-        d1 = Conv2DTranspose(n_filters[3], (3, 3), padding="same", strides=(2, 2))(b2)
+        d1 = Conv2DTranspose(n_filters[3], (3, 3), padding="same", strides=(2, 2))(b1)
         d1 = Concatenate()([d1, c4])
         d1 = conv_block(d1, n_filters[3], pool=False)
 
