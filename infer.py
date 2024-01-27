@@ -1,3 +1,8 @@
+"""
+Inference testing for ResUNet++, ResUNet or UNet models.
+ - Inference based on images from testing in new_data/dataset
+ - Model weights are read from files directory
+"""
 
 import os
 import time
@@ -11,13 +16,14 @@ from tensorflow.python.keras.models import load_model
 from tensorflow.python.keras.utils.all_utils import CustomObjectScope
 from data_generator import *
 from metrics import dice_coef, dice_loss
-
 from tensorflow.python.keras.models import Model
-from m_resunet import ResUnetPlusPlus
+from unet import Unet
+from resunet import ResUnet
+from resunet_pp import ResUnetPlusPlus
 from tensorflow.python.keras.metrics import (Precision, Recall, MeanIoU)
-from tensorflow.python.keras.optimizers import nadam_v2, adam_v2
+from tensorflow.python.keras.optimizers import nadam_v2, adam_v2, adamax_v2, adagrad_v2
 
-# Parameters
+# Model parameters (must match those in run.py, on training)
 lr = 1e-4
 
 
@@ -32,12 +38,14 @@ if __name__ == "__main__":
     # Start time
     start = time.time()
 
+    # File Paths; Comment out model_path as appropriate
     # model_path = "files/unet.h5"
     # model_path = "files/resunet.h5"
     model_path = "files/resunetplusplus.h5"
     save_path = "result"
     test_path = "new_data/beak_dataset/test/"
 
+    # Model parameters
     image_size = 256
     batch_size = 1
 
@@ -53,19 +61,23 @@ if __name__ == "__main__":
         pass
 
 
-    # Model
+    # Rebuild model with weights from training
     with ((CustomObjectScope({'dice_loss': dice_loss, 'dice_coef': dice_coef}))):
+
+        # Build Model; Comment out model as appropriate
         # arch = Unet(input_size=image_size)
         # arch = ResUnet(input_size=image_size)
         arch = ResUnetPlusPlus(input_size=image_size)
         model = arch.build_model()
-        optimizer = adam_v2.Aadam(lr)
+
+        optimizer = adamax_v2.Adamax(lr)
         metrics = [Recall(), Precision(), dice_coef, MeanIoU(num_classes=2)]
         model.compile(loss=dice_loss, optimizer=optimizer, metrics=metrics)
-        # model.load_weights("files/resunetplusplus.h5")
-        # model.load_weights("files/resunetplusplus.h5")
-        model.load_weights("files/resunetplusplus.h5")
 
+        # Load model weights; Comment out model as appropriate
+        # model.load_weights("files/unet.h5")
+        # model.load_weights("files/resunet.h5")
+        model.load_weights("files/resunetplusplus.h5")
 
 
     # Test

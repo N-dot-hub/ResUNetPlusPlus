@@ -114,7 +114,7 @@ def attetion_block(g, x):
 
 
 class ResUnetPlusPlus:
-    def __init__(self, input_size=256):
+    def __init__(self, input_size=128):
         self.input_size = input_size
 
     def build_model(self):

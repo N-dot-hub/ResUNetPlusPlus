@@ -1,3 +1,11 @@
+"""
+Image processing for images and masks in data/raw_dataset.
+ - Crops the images and masks and saves them in data/dataset.
+ - Once cropped the images are randomly split into validation-training-testing data
+   sets and saved in new_data/dataset.
+ - The Training dataset is then augmented to increase it, with 30 augmentations per
+   original image.
+"""
 
 import os
 import random
@@ -24,6 +32,7 @@ def read_image(imagefile, grayscale=False):
 def crop_image(imagefile, rows, cols):
     crop_img = imagefile[rows[0]:rows[1], cols[0]:cols[1]]
     return crop_img
+
 
 def save_image(image, mask, path, binary=True):
     image = np.array(image)
@@ -146,7 +155,7 @@ def cutout(image_origin, mask_origin, mask_size, mask_value='mean'):
     if mask_value == 'mean':
         mask_value = image.mean()
     elif mask_value == 'random':
-        mask_value = np.random.randint(0, 256)
+        mask_value = np.random.randint(0, 1024)
 
     h, w, _ = image.shape
     top = np.random.randint(0 - mask_size // 2, h - mask_size)
@@ -240,17 +249,19 @@ if __name__ == '__main__':
     # Start time
     start = time.time()
 
-    # Raw Image crop size
+    # Raw Image crop size; Comment out as appropriate
     # raw_crop_size = (2048, 2048)
-    raw_crop_size = (768, 768)
+    # raw_crop_size = (768, 768)
+    raw_crop_size = (3456, 3456)
 
+    # Image directories
     path = "data/"
-    raw_dataset_name = "raw_beak_dataset"
-    ann_json = "data/raw_beak_dataset/crop_box.json"
-    path_json = "data/raw_beak_dataset/"
+    raw_dataset_name = "raw_dataset"
+    ann_json = "data/raw_dataset/crop_box.json"
+    path_json = "data/raw_dataset/"
     raw_full_path = os.path.join(path, raw_dataset_name)
 
-    dataset_name = "beak_dataset"
+    dataset_name = "dataset"
     full_path = os.path.join(path, dataset_name)
 
     raw_images = glob(os.path.join(raw_full_path, "images/", "*"))
@@ -261,12 +272,12 @@ if __name__ == '__main__':
 
     for idx, p in tqdm(enumerate(raw_images), total=len(raw_images)):
         # Path
-        name = p.split("\\")[-1].split(".")[0]
+        name = p.split("/")[-1].split(".")[0]
         image_path = raw_images[idx]
         mask_path = raw_masks[idx]
 
-        # Crop
-        img_id = str(name) + ".jpg"
+        # Crop images based on bounding box json file
+        img_id = str(name) + ".JPG"
         img_id = coco.get_imgfile_name(img_id)
         ann_id = coco.get_annIds(img_id)
         annotations = coco.load_anns(ann_id)
@@ -274,11 +285,15 @@ if __name__ == '__main__':
         dim_row = int(round(bbox[1],0))
         dim_col = int(round(bbox[0],0))
 
+        # Crop location row and col; Comment out as appropriate
         # crop_row = (150, 150 + raw_crop_size[0])
         crop_row = (dim_row, dim_row + raw_crop_size[0])
+        # crop_row = (0, 0 + raw_crop_size[0])
         # crop_col = (1650, 1650 + raw_crop_size[1])
         crop_col = (dim_col, dim_col + raw_crop_size[1])
-
+        # crop_col = (0, 0 + raw_crop_size[1])
+        
+        # Create dataset directory
         if not os.path.exists(full_path):
             os.mkdir(full_path)
             os.mkdir(os.path.join(full_path, "images"))
@@ -299,11 +314,12 @@ if __name__ == '__main__':
             tmp_path = [img_path, mask_path]
             save_image(image, mask, tmp_path)
 
-    # Image Augmentation
-    scale = 3
+    # Image Augmentation settings
+    scale = 4 
     size = (256 * scale, 256 * scale)
     crop_size = (300 * scale, 300 * scale)
 
+    # Create new_data directory
     new_path = "new_data/"
     create_dir(new_path)
     new_full_path = os.path.join(new_path, dataset_name)
@@ -325,11 +341,13 @@ if __name__ == '__main__':
     images.sort()
     masks.sort()
 
+    # Set train-valid-test split
     len_ids = len(images)
-    train_size = int((80/100)*len_ids)
-    valid_size = int((10/100)*len_ids)		# Here 20 is the percent of images used for validation
-    test_size = int((10/100)*len_ids)		# Here 20 is the percent of images used for testing
+    train_size = int((70/100)*len_ids)
+    valid_size = int((15/100)*len_ids)		# Here 15 is the percent of images used for validation
+    test_size = int((15/100)*len_ids)		# Here 15 is the percent of images used for testing
 
+    # Randomly select images for train-valid-test
     train_images, test_images = train_test_split(images, test_size=test_size, random_state=42)
     train_masks, test_masks = train_test_split(masks, test_size=test_size, random_state=42)
 
@@ -341,10 +359,10 @@ if __name__ == '__main__':
     print("Validation Size: ", valid_size)
     print("Testing Size: ", test_size)
 
-    # Testing images and masks
+    # Copy Testing images and masks to new_data/dataset directory
     for idx, p in tqdm(enumerate(test_images), total=len(test_images)):
         # Path
-        name = p.split("\\")[-1].split(".")[0]
+        name = p.split("/")[-1].split(".")[0]
         image_path = test_images[idx]
         mask_path = test_masks[idx]
 
@@ -363,10 +381,10 @@ if __name__ == '__main__':
             tmp_path = [img_path, mask_path]
             save_image(image, mask, tmp_path)
 
-    # Validation images and masks
+    # Copy Validation images and masks to new_data/dataset directory
     for idx, p in tqdm(enumerate(valid_images), total=len(valid_images)):
         # Path
-        name = p.split("\\")[-1].split(".")[0]
+        name = p.split("/")[-1].split(".")[0]
         image_path = valid_images[idx]
         mask_path = valid_masks[idx]
 
@@ -385,10 +403,10 @@ if __name__ == '__main__':
             tmp_path = [img_path, mask_path]
             save_image(image, mask, tmp_path)
 
-    # Training images and masks
+    # Augment and Copy Training images and masks to new_data/dataset directory
     for idx, p in tqdm(enumerate(train_images), total=len(train_images)):
         # Path
-        name = p.split("\\")[-1].split(".")[0]
+        name = p.split("/")[-1].split(".")[0]
         image_path = train_images[idx]
         mask_path = train_masks[idx]
 
@@ -403,7 +421,7 @@ if __name__ == '__main__':
             image4, mask4 = vertical_flip(image, mask, size)
             image5, mask5 = scale_augmentation(image, mask, (512 * scale, 768 * scale), crop_size, size)
             image6, mask6 = random_rotation(image, mask, size)
-            image7, mask7 = cutout(image, mask, 256)
+            image7, mask7 = cutout(image, mask, 256 * scale)
             # Extra Cropping
             image8, mask8 = random_crop(image, mask, crop_size, size)
             image9, mask9 = random_crop(image, mask, crop_size, size)
